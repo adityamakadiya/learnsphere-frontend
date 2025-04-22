@@ -12,31 +12,35 @@ function Navbar() {
   };
 
   return (
-    <nav className="bg-primary p-5 shadow-modern">
-      <div className="container mx-auto flex justify-between items-center">
-        <Link
-          to="/"
-          className="text-white text-2xl font-extrabold tracking-wide"
-        >
+    <nav className="bg-white shadow-md py-4">
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <Link to="/" className="text-2xl font-bold text-gray-800">
           LearnSphere
         </Link>
-        <div className="space-x-6 text-white font-semibold">
+
+        <div className="space-x-4 text-sm sm:text-base font-medium">
           {user ? (
             <>
-              <span>Welcome, {user.email}</span>
+              <span className="text-gray-600">Hi, {user.email}</span>
               <button
                 onClick={handleLogout}
-                className="hover:underline transition"
+                className="text-red-500 hover:text-red-600 transition"
               >
                 Logout
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="hover:underline transition">
+              <Link
+                to="/login"
+                className="text-gray-700 hover:text-blue-600 transition"
+              >
                 Login
               </Link>
-              <Link to="/register" className="hover:underline transition">
+              <Link
+                to="/register"
+                className="text-gray-700 hover:text-blue-600 transition"
+              >
                 Register
               </Link>
             </>
