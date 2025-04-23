@@ -14,7 +14,7 @@ function Login() {
     setError("");
     try {
       await login(email, password);
-      navigate("/");
+      navigate("/instructor-dashboard");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     }
