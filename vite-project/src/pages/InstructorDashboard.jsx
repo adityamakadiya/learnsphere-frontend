@@ -8,7 +8,7 @@ function InstructorDashboard() {
   const [courses, setCourses] = useState([]);
   const [error, setError] = useState("");
   const [isFetching, setIsFetching] = useState(true);
-  const { user, logout, loading } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,7 +38,7 @@ function InstructorDashboard() {
       }
     };
     fetchCourses();
-  }, [user, navigate, logout, loading]);
+  }, [user, navigate, loading]);
 
   const handleDelete = async (courseId) => {
     if (window.confirm("Are you sure you want to delete this course?")) {
@@ -64,19 +64,7 @@ function InstructorDashboard() {
             <h2 className="text-4xl font-bold text-gray-800">
               Instructor Dashboard
             </h2>
-            <button
-              onClick={logout}
-              className="bg-red-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-red-700 transition"
-            >
-              Logout
-            </button>
           </div>
-          <Link
-            to="/instructor/courses/new"
-            className="inline-block bg-blue-600 text-white py-3 px-8 rounded-lg font-semibold hover:bg-blue-700 transition mb-10"
-          >
-            Create New Course
-          </Link>
           {error && (
             <p className="text-red-500 text-center mb-6 font-medium">{error}</p>
           )}

@@ -44,7 +44,7 @@ function ManageSessions() {
               Manage Sessions
             </h2>
             <Link
-              to={`/courses/${courseId}`}
+              to={`/instructor/courses/${courseId}`}
               className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700"
             >
               Back to Course

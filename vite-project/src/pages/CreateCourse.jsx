@@ -167,7 +167,7 @@ function CreateCourse() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/instructor/dashboard")}
+                onClick={() => navigate("/instructor-dashboard")}
                 className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition"
               >
                 Cancel
