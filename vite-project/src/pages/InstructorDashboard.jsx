@@ -8,7 +8,7 @@ function InstructorDashboard() {
   const [courses, setCourses] = useState([]);
   const [error, setError] = useState("");
   const [isFetching, setIsFetching] = useState(true);
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -38,7 +38,7 @@ function InstructorDashboard() {
       }
     };
     fetchCourses();
-  }, [user, navigate, loading]);
+  }, [user, navigate, loading, logout]);
 
   const handleDelete = async (courseId) => {
     if (window.confirm("Are you sure you want to delete this course?")) {

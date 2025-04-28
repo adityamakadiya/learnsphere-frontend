@@ -11,7 +11,7 @@ function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    navigate("/login");
+    navigate("/");
     setIsOpen(false);
   };
 
@@ -48,6 +48,22 @@ function Navbar() {
                 >
                   Home
                 </Link>
+                {user.role === "Student" && (
+                  <>
+                    <Link
+                      to="/student/dashboard"
+                      className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg text-sm font-medium"
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/student/courses"
+                      className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg text-sm font-medium"
+                    >
+                      Browse Courses
+                    </Link>
+                  </>
+                )}
                 {user.role === "Instructor" && (
                   <>
                     <Link
@@ -131,6 +147,24 @@ function Navbar() {
                 >
                   Home
                 </Link>
+                {user.role === "Student" && (
+                  <>
+                    <Link
+                      to="/student/dashboard"
+                      className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg text-base font-medium"
+                      onClick={toggleMenu}
+                    >
+                      Dashboard
+                    </Link>
+                    <Link
+                      to="/student/courses"
+                      className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg text-base font-medium"
+                      onClick={toggleMenu}
+                    >
+                      Browse Courses
+                    </Link>
+                  </>
+                )}
                 {user.role === "Instructor" && (
                   <>
                     <Link

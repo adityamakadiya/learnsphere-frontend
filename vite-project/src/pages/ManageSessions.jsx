@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import AuthContext from "../context/AuthContext";
+import "../index.css";
 
 function ManageSessions() {
   const [sessions, setSessions] = useState([]);
@@ -9,6 +10,12 @@ function ManageSessions() {
   const { courseId } = useParams();
   const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const stripHtml = (html) => {
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "No content provided.";
+  };
 
   useEffect(() => {
     if (loading) return;
@@ -26,7 +33,7 @@ function ManageSessions() {
         );
         setSessions(response.data.data);
       } catch (err) {
-        setError(`Failed to fetch sessions: ${err.message}`);
+        setError("Failed to fetch sessions.");
         if (err.response?.status === 401) {
           navigate("/login");
         }
@@ -35,22 +42,32 @@ function ManageSessions() {
     fetchSessions();
   }, [courseId, user, navigate, loading]);
 
+  if (loading || !user || user.role !== "Instructor") return null;
+
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-12">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white p-10 rounded-2xl shadow-xl">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mb-6 gap-4">
             <h2 className="text-3xl font-bold text-gray-800">
               Manage Sessions
             </h2>
-            <Link
-              to={`/instructor/courses/${courseId}`}
-              className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700"
-            >
-              Back to Course
-            </Link>
+            <div className="flex gap-4">
+              <Link
+                to={`/instructor/courses/${courseId}/sessions/new`}
+                className="bg-blue-600 text-white py-2 px-6 rounded-lg hover:bg-blue-700"
+              >
+                Add Session
+              </Link>
+              <Link
+                to={`/instructor/courses/${courseId}`}
+                className="bg-gray-600 text-white py-2 px-6 rounded-lg hover:bg-gray-700"
+              >
+                Back to Course
+              </Link>
+            </div>
           </div>
-          {error && <p className="text-red-500 mb-4">{error}</p>}
+          {error && <p className="text-red-500 mb-4 font-medium">{error}</p>}
           {sessions.length === 0 ? (
             <p className="text-gray-600">No sessions available.</p>
           ) : (
@@ -64,7 +81,7 @@ function ManageSessions() {
                     {session.title}
                   </h4>
                   <p className="text-gray-600 mt-2">
-                    {session.content || "No content provided."}
+                    {stripHtml(session.content)}
                   </p>
                 </li>
               ))}
