@@ -109,7 +109,7 @@ function CourseDetailsStudents() {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        `http://localhost:5000/sessions/${sessionId}/complete`,
+        `http://localhost:5000/students/sessions/${sessionId}/complete`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
