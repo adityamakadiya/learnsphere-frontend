@@ -13,6 +13,7 @@ import CreateSession from "./pages/CreateSession";
 import BrowseCourses from "./pages/Student/BrowseCourses";
 import StudentDashboard from "./pages/Student/StudentDashboard";
 import CourseDetailsStudents from "./pages/Student/CourseDetailsStudents";
+import UpdateSession from "./pages/UpdateSession";
 
 function App() {
   return (
@@ -42,6 +43,10 @@ function App() {
         <Route
           path="/students/courses/:courseId"
           element={<CourseDetailsStudents />}
+        />
+        <Route
+          path="/instructor/courses/:courseId/sessions/:sessionId/edit"
+          element={<UpdateSession />}
         />
       </Routes>
     </AuthProvider>

@@ -75,14 +75,22 @@ function ManageSessions() {
               {sessions.map((session) => (
                 <li
                   key={session.id}
-                  className="bg-gray-50 p-6 rounded-lg shadow-md"
+                  className="bg-gray-50 p-6 rounded-lg shadow-md flex justify-between items-start"
                 >
-                  <h4 className="text-lg font-semibold text-gray-800">
-                    {session.title}
-                  </h4>
-                  <p className="text-gray-600 mt-2">
-                    {stripHtml(session.content)}
-                  </p>
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-800">
+                      {session.title}
+                    </h4>
+                    <p className="text-gray-600 mt-2">
+                      {stripHtml(session.content)}
+                    </p>
+                  </div>
+                  <Link
+                    to={`/instructor/courses/${courseId}/sessions/${session.id}/edit`}
+                    className="bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700"
+                  >
+                    Edit Session
+                  </Link>
                 </li>
               ))}
             </ul>
