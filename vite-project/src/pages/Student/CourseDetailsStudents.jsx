@@ -11,8 +11,15 @@ function CourseDetailsStudents() {
   const [course, setCourse] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [completedSessionIds, setCompletedSessionIds] = useState([]);
+  const [progress, setProgress] = useState({
+    completionPercentage: 0,
+    completedSessions: 0,
+    totalSessions: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const API_BASE_URL = "http://localhost:5000"; // Adjust if your backend is on a different port
 
   useEffect(() => {
     if (!user || user.role !== "Student") {
@@ -25,17 +32,19 @@ function CourseDetailsStudents() {
       setError("");
       try {
         const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
         const headers = { Authorization: `Bearer ${token}` };
 
         // Fetch enrolled courses to get course details
         let courseData = null;
         try {
           const enrollmentsResponse = await axios.get(
-            "http://localhost:5000/students/enrollments",
+            `${API_BASE_URL}/students/enrollments`,
             { headers }
           );
           const enrollments = enrollmentsResponse.data.data;
-          console.log("Enrollments:", enrollments);
           courseData = enrollments.find(
             (e) => e.course.id === parseInt(courseId)
           )?.course;
@@ -56,11 +65,10 @@ function CourseDetailsStudents() {
         // Fetch sessions
         try {
           const sessionsResponse = await axios.get(
-            `http://localhost:5000/students/courses/${courseId}/sessions`,
+            `${API_BASE_URL}/students/courses/${courseId}/sessions`,
             { headers }
           );
           const sessionsData = sessionsResponse.data.data;
-          console.log("Sessions:", sessionsData);
           setSessions(sessionsData);
         } catch (sessionErr) {
           console.error(
@@ -73,23 +81,40 @@ function CourseDetailsStudents() {
           }
         }
 
-        // Fetch completed sessions (via progress table or separate API if available)
+        // Fetch progress
         try {
+          console.log("Fetching progress for:", { userId: user.id, courseId });
           const progressResponse = await axios.get(
-            `http://localhost:5000/students/courses/${courseId}/progress`,
+            `${API_BASE_URL}/progress/${user.id}/${courseId}`,
             { headers }
           );
-          const progressData = progressResponse.data.data;
-          console.log("Progress:", progressData);
+          const progressData = progressResponse.data;
+          setProgress({
+            completionPercentage: progressData.completionPercentage,
+            completedSessions: progressData.completedSessions,
+            totalSessions: progressData.totalSessions,
+          });
+          // Fetch completed session IDs
+          const completedResponse = await axios.get(
+            `${API_BASE_URL}/students/courses/${courseId}/progress`,
+            { headers }
+          );
           setCompletedSessionIds(
-            progressData.filter((p) => p.completed).map((p) => p.sessionId)
+            completedResponse.data.data
+              .filter((p) => p.completed)
+              .map((p) => p.sessionId)
           );
         } catch (progressErr) {
           console.error(
             "Failed to fetch progress:",
             progressErr.response?.data || progressErr.message
           );
-          // Fallback: assume no progress API, rely on mark complete response
+          setError("Could not load progress data. Showing 0% progress.");
+          setProgress({
+            completionPercentage: 0,
+            completedSessions: 0,
+            totalSessions: sessions.length || 0,
+          });
         }
       } catch (err) {
         console.error("General error:", err.response?.data || err.message);
@@ -103,26 +128,41 @@ function CourseDetailsStudents() {
     };
 
     fetchCourseData();
-  }, [user, navigate, courseId]);
+  }, [user, navigate, courseId, sessions.length]);
 
   const handleMarkComplete = async (sessionId) => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+      const headers = { Authorization: `Bearer ${token}` };
       const response = await axios.post(
-        `http://localhost:5000/students/sessions/${sessionId}/complete`,
+        `${API_BASE_URL}/students/sessions/${sessionId}/complete`,
         {},
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers }
       );
-      console.log("Mark Complete:", response.data);
       setCompletedSessionIds([...completedSessionIds, sessionId]);
+      // Refresh progress
+      const progressResponse = await axios.get(
+        `${API_BASE_URL}/progress/${user.id}/${courseId}`,
+        { headers }
+      );
+      setProgress({
+        completionPercentage: progressResponse.data.completionPercentage,
+        completedSessions: progressResponse.data.completedSessions,
+        totalSessions: progressResponse.data.totalSessions,
+      });
       alert("Session marked as complete!");
     } catch (err) {
       console.error(
         "Failed to mark complete:",
         err.response?.data || err.message
       );
+      console.log("err",err);
+      
       const errorMsg =
-        err.response?.data?.error || "Failed to mark session complete.";
+      err.response?.data?.error || "Failed to mark session complete.";
       alert(errorMsg);
       if (
         err.response?.status === 400 &&
@@ -134,8 +174,6 @@ function CourseDetailsStudents() {
   };
 
   const renderTipTapContent = (content) => {
-    // Placeholder: Convert TipTap JSON to HTML
-    // Use @tiptap/react or a custom parser for production
     return (
       <div
         dangerouslySetInnerHTML={{ __html: content || "No content available." }}
@@ -144,23 +182,33 @@ function CourseDetailsStudents() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 px-4 py-12">
-      <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6 text-gray-800 text-center">
-          Course Details Student
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto bg-white rounded-2xl shadow-lg p-8">
+        <h1 className="text-3xl font-bold text-gray-900 text-center mb-8">
+          {course?.title || "Course Details"}
         </h1>
+
         {error && (
-          <p className="text-red-500 text-center mb-6 font-medium">{error}</p>
+          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+            {error}
+            <button
+              onClick={() => fetchCourseData()}
+              className="ml-4 text-sm text-red-700 underline"
+            >
+              Retry
+            </button>
+          </div>
         )}
+
         {loading ? (
-          <p className="text-gray-600 text-center">Loading course details...</p>
+          <div className="text-center text-gray-600">Loading course details...</div>
         ) : !course ? (
-          <p className="text-gray-600 text-center">Course not found.</p>
+          <div className="text-center text-gray-600">Course not found.</div>
         ) : (
           <div>
             {/* Course Details */}
             <div className="mb-8">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
                 {course.title}
               </h2>
               <p className="text-gray-600 mb-4">
@@ -171,20 +219,41 @@ function CourseDetailsStudents() {
               </p>
             </div>
 
+            {/* Progress Bar */}
+            <div className="mb-8">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Your Progress
+              </h3>
+              {loading ? (
+                <div className="w-full bg-gray-200 rounded-full h-4 animate-pulse"></div>
+              ) : (
+                <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+                  <div
+                    className="bg-green-500 h-4 rounded-full transition-all duration-300"
+                    style={{ width: `${progress.completionPercentage}%` }}
+                  ></div>
+                </div>
+              )}
+              <p className="text-sm text-gray-600 mt-2">
+                {progress.completedSessions} of {progress.totalSessions} sessions
+                completed ({progress.completionPercentage.toFixed(2)}%)
+              </p>
+            </div>
+
             {/* Sessions List */}
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Sessions
             </h3>
             {sessions.length === 0 ? (
-              <p className="text-gray-600">No sessions available.</p>
+              <div className="text-gray-600">No sessions available.</div>
             ) : (
               <div className="space-y-6">
                 {sessions.map((session) => (
                   <div
                     key={session.id}
-                    className="bg-gray-50 p-6 rounded-lg shadow-md border border-gray-200"
+                    className="bg-gray-50 p-6 rounded-lg shadow-sm border border-gray-200"
                   >
-                    <h4 className="text-lg font-semibold text-gray-800 mb-2">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-2">
                       {session.title}
                     </h4>
                     {session.youtubeUrl && (
@@ -201,13 +270,13 @@ function CourseDetailsStudents() {
                         ></iframe>
                       </div>
                     )}
-                    <div className="text-gray-600 mb-4">
+                    <div className="text-gray-600 mb-4 prose">
                       {renderTipTapContent(session.content)}
                     </div>
                     <button
                       onClick={() => handleMarkComplete(session.id)}
                       disabled={completedSessionIds.includes(session.id)}
-                      className={`w-full py-2 rounded-lg text-white font-medium transition ${
+                      className={`w-full py-2 px-4 rounded-lg text-white font-medium transition-colors duration-200 ${
                         completedSessionIds.includes(session.id)
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-green-600 hover:bg-green-700"
@@ -215,7 +284,7 @@ function CourseDetailsStudents() {
                     >
                       {completedSessionIds.includes(session.id)
                         ? "Completed"
-                        : "Mark Complete"}
+                        : "Mark as Complete"}
                     </button>
                   </div>
                 ))}
