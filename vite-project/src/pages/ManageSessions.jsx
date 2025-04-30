@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
 import AuthContext from "../context/AuthContext";
+import api from "../api"; // Use api.js with cookie-based auth
 import "../index.css";
 
 function ManageSessions() {
@@ -18,23 +18,40 @@ function ManageSessions() {
   };
 
   useEffect(() => {
-    if (loading) return;
+    if (loading) {
+      console.log("ManageSessions: Waiting for auth to load"); // Debug
+      return;
+    }
     if (!user || user.role !== "Instructor") {
-      navigate("/");
+      console.log("ManageSessions: Redirecting to /login, user:", user); // Debug
+      navigate("/login"); // Redirect to login
       return;
     }
 
     const fetchSessions = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `http://localhost:5000/sessions/${courseId}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-        setSessions(response.data.data);
+        console.log(
+          "ManageSessions: Fetching sessions for courseId:",
+          courseId,
+          "user:",
+          user.id
+        ); // Debug
+        const response = await api.get(`/sessions/${courseId}`);
+        console.log("ManageSessions: Sessions response:", response.data); // Debug
+        setSessions(response.data.data || []);
       } catch (err) {
-        setError("Failed to fetch sessions.");
+        console.error(
+          "ManageSessions: Failed to fetch sessions:",
+          err.response?.status,
+          err.response?.data || err.message
+        );
+        setError(
+          `Failed to fetch sessions: ${
+            err.response?.data?.error || err.message
+          }`
+        );
         if (err.response?.status === 401) {
+          console.log("ManageSessions: 401 detected, redirecting to /login"); // Debug
           navigate("/login");
         }
       }
@@ -42,7 +59,12 @@ function ManageSessions() {
     fetchSessions();
   }, [courseId, user, navigate, loading]);
 
-  if (loading || !user || user.role !== "Instructor") return null;
+  if (loading) {
+    return <div className="text-center text-gray-700 text-lg">Loading...</div>;
+  }
+  if (!user || user.role !== "Instructor") {
+    return null; // Handled by useEffect redirect
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 px-4 py-12">
@@ -67,7 +89,17 @@ function ManageSessions() {
               </Link>
             </div>
           </div>
-          {error && <p className="text-red-500 mb-4 font-medium">{error}</p>}
+          {error && (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
+              {error}
+              <button
+                onClick={() => fetchSessions()}
+                className="ml-4 text-sm text-red-700 underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
           {sessions.length === 0 ? (
             <p className="text-gray-600">No sessions available.</p>
           ) : (

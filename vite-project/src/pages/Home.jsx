@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import AuthContext from "../context/AuthContext";
+import api from "../api"; // Use api.js with cookie-based auth
 import "../index.css";
 
 function Home() {
@@ -12,23 +12,28 @@ function Home() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user || user.role !== "Instructor") return;
+    if (!user || user.role !== "Instructor") {
+      console.log("Home: Skipping course fetch, user:", user); // Debug
+      return;
+    }
 
     const fetchCourses = async () => {
       setLoading(true);
       setError("");
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "http://localhost:5000/courses/allCourses",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setCourses(response.data.data);
+        console.log("Home: Fetching courses for user:", user.id); // Debug
+        const response = await api.get("/courses/allCourses");
+        console.log("Home: Courses response:", response.data); // Debug
+        setCourses(response.data.data || []);
       } catch (err) {
+        console.error(
+          "Home: Failed to fetch courses:",
+          err.response?.status,
+          err.response?.data || err.message
+        );
         setError("Failed to fetch courses.");
         if (err.response?.status === 401) {
+          console.log("Home: 401 detected, redirecting to /login"); // Debug
           navigate("/login");
         }
       } finally {
@@ -74,7 +79,7 @@ function Home() {
                       </h2>
                       <p className="text-gray-600 mb-4">{course.description}</p>
                       <p className="text-gray-500 text-sm">
-                        Category: {course.category.name}
+                        Category: {course.category?.name || "Unknown"}
                       </p>
                     </div>
                   ))}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
 import AuthContext from "../context/AuthContext";
+import api from "../api"; // Use api.js with cookie-based auth
 import "../index.css";
 
 function CourseDetails() {
@@ -13,12 +13,14 @@ function CourseDetails() {
   const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const API_BASE_URL = "http://localhost:5000";
-
   useEffect(() => {
-    if (loading) return;
+    if (loading) {
+      console.log("CourseDetails: Waiting for auth to load"); // Debug
+      return;
+    }
     if (!user || user.role !== "Instructor") {
-      navigate("/");
+      console.log("CourseDetails: Redirecting to /login, user:", user); // Debug
+      navigate("/login"); // Redirect to login
       return;
     }
 
@@ -26,26 +28,31 @@ function CourseDetails() {
       setIsFetching(true);
       setError("");
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("No authentication token found");
-        }
-        const headers = { Authorization: `Bearer ${token}` };
+        console.log(
+          "CourseDetails: Fetching data for courseId:",
+          courseId,
+          "user:",
+          user.id
+        ); // Debug
 
         // Fetch course details
         try {
-          const courseResponse = await axios.get(
-            `${API_BASE_URL}/courses/${courseId}`,
-            { headers }
-          );
+          const courseResponse = await api.get(`/courses/${courseId}`);
+          console.log("CourseDetails: Course response:", courseResponse.data); // Debug
           setCourse(courseResponse.data.data);
         } catch (err) {
           console.error(
-            "Failed to fetch course:",
+            "CourseDetails: Failed to fetch course:",
+            err.response?.status,
             err.response?.data || err.message
           );
-          setError(`Failed to fetch course data: ${err.message}`);
+          setError(
+            `Failed to fetch course data: ${
+              err.response?.data?.error || err.message
+            }`
+          );
           if (err.response?.status === 401) {
+            console.log("CourseDetails: 401 detected, redirecting to /login"); // Debug
             navigate("/login");
           }
           return;
@@ -53,22 +60,31 @@ function CourseDetails() {
 
         // Fetch enrollments with progress
         try {
-          const enrollmentsResponse = await axios.get(
-            `${API_BASE_URL}/progress/courses/${courseId}/enrollments`,
-            { headers }
+          const enrollmentsResponse = await api.get(
+            `/progress/courses/${courseId}/enrollments`
           );
-          setEnrollments(enrollmentsResponse.data);
+          console.log(
+            "CourseDetails: Enrollments response:",
+            enrollmentsResponse.data
+          ); // Debug
+          setEnrollments(enrollmentsResponse.data || []);
         } catch (enrollErr) {
           console.error(
-            "Failed to fetch enrollments:",
+            "CourseDetails: Failed to fetch enrollments:",
+            enrollErr.response?.status,
             enrollErr.response?.data || enrollErr.message
           );
           setError("Could not load enrolled students.");
         }
       } catch (err) {
-        console.error("General error:", err.response?.data || err.message);
+        console.error(
+          "CourseDetails: General error:",
+          err.response?.status,
+          err.response?.data || err.message
+        );
         setError("Failed to load data.");
         if (err.response?.status === 401) {
+          console.log("CourseDetails: 401 detected, redirecting to /login"); // Debug
           navigate("/login");
         }
       } finally {
@@ -89,29 +105,29 @@ function CourseDetails() {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("No authentication token found");
-      }
-      const headers = { Authorization: `Bearer ${token}` };
-      await axios.delete(
-        `${API_BASE_URL}/progress/enrollments/${enrollmentId}`,
-        { headers }
-      );
+      console.log("CourseDetails: Removing enrollmentId:", enrollmentId); // Debug
+      await api.delete(`/progress/enrollments/${enrollmentId}`);
+      console.log("CourseDetails: Enrollment deleted:", enrollmentId); // Debug
       setEnrollments(
         enrollments.filter((enrollment) => enrollment.id !== enrollmentId)
       );
       alert("Student removed successfully!");
     } catch (err) {
       console.error(
-        "Failed to remove student:",
+        "CourseDetails: Failed to remove student:",
+        err.response?.status,
         err.response?.data || err.message
       );
       alert(err.response?.data?.error || "Failed to remove student.");
     }
   };
 
-  if (loading || !user || user.role !== "Instructor") return null;
+  if (loading) {
+    return <div className="text-center text-gray-700 text-lg">Loading...</div>;
+  }
+  if (!user || user.role !== "Instructor") {
+    return null; // Handled by useEffect redirect
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -120,7 +136,7 @@ function CourseDetails() {
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Course Details</h2>
             <Link
-              to="/instructor-dashboard"
+              to="/instructor-dashboard" // Match dashboard route
               className="bg-gray-600 text-white py-2 px-6 rounded-lg font-semibold hover:bg-gray-700 transition"
             >
               Back to Dashboard
@@ -162,7 +178,9 @@ function CourseDetails() {
                   <h3 className="text-xl font-semibold text-gray-900">
                     Category
                   </h3>
-                  <p className="text-gray-600 mt-2">{course.category.name}</p>
+                  <p className="text-gray-600 mt-2">
+                    {course.category?.name || "Unknown"}
+                  </p>
                 </div>
                 <div className="flex justify-end gap-4">
                   <Link
@@ -212,24 +230,27 @@ function CourseDetails() {
                             className="border-b border-gray-200"
                           >
                             <td className="px-4 py-3 text-gray-600">
-                              {enrollment.user.email}
+                              {enrollment.user?.email || "Unknown"}
                             </td>
                             <td className="px-4 py-3">
                               <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                                 <div
                                   className="bg-green-500 h-3 rounded-full transition-all duration-300"
                                   style={{
-                                    width: `${enrollment.progress.completionPercentage}%`,
+                                    width: `${
+                                      enrollment.progress
+                                        ?.completionPercentage || 0
+                                    }%`,
                                   }}
                                 ></div>
                               </div>
                               <p className="text-sm text-gray-600 mt-1">
-                                {enrollment.progress.completedSessions} of{" "}
-                                {enrollment.progress.totalSessions} sessions
-                                completed (
-                                {enrollment.progress.completionPercentage.toFixed(
-                                  2
-                                )}
+                                {enrollment.progress?.completedSessions || 0} of{" "}
+                                {enrollment.progress?.totalSessions || 0}{" "}
+                                sessions completed (
+                                {(
+                                  enrollment.progress?.completionPercentage || 0
+                                ).toFixed(2)}
                                 %)
                               </p>
                             </td>

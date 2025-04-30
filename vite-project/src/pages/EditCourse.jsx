@@ -1,16 +1,15 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import AuthContext from "../context/AuthContext";
+import api from "../api"; // Use api.js with cookie-based auth
 import "../index.css";
 
 function EditCourse() {
   const [categories, setCategories] = useState([]);
   const [error, setError] = useState("");
   const [isFetching, setIsFetching] = useState(true);
-  const params = useParams();
-  const courseId = params.id;
+  const { id: courseId } = useParams();
   const { user, loading } = useContext(AuthContext);
   const navigate = useNavigate();
   const {
@@ -23,8 +22,17 @@ function EditCourse() {
   });
 
   useEffect(() => {
-    if (loading || !user || user.role !== "Instructor") return navigate("/");
+    if (loading) {
+      console.log("EditCourse: Waiting for auth to load"); // Debug
+      return;
+    }
+    if (!user || user.role !== "Instructor") {
+      console.log("EditCourse: Redirecting to /login, user:", user); // Debug
+      navigate("/login");
+      return;
+    }
     if (!courseId || isNaN(courseId)) {
+      console.log("EditCourse: Invalid courseId:", courseId); // Debug
       setError("Invalid course ID.");
       setIsFetching(false);
       const timeout = setTimeout(() => navigate("/instructor-dashboard"), 3000);
@@ -33,41 +41,45 @@ function EditCourse() {
 
     const fetchCourse = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          `http://localhost:5000/courses/${courseId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        console.log(`EditCourse: Fetching courseId=${courseId}`); // Debug
+        const response = await api.get(`/courses/${courseId}`);
         const course = response.data.data;
+        console.log("EditCourse: Course fetched:", course); // Debug
         setValue("title", course.title);
         setValue("description", course.description || "");
         setValue("categoryId", course.categoryId.toString());
       } catch (err) {
-        setError(
+        console.error(
+          "EditCourse: Fetch Course Error:",
+          err.response?.status,
+          err.response?.data || err.message
+        );
+        const errorMessage =
           err.response?.status === 404
-            ? "Course not found"
+            ? "Course not found."
             : err.response?.status === 401
             ? "Unauthorized. Please log in again."
-            : `Failed to fetch course: ${err.message}`
-        );
+            : err.response?.status === 403
+            ? "You are not authorized to edit this course."
+            : err.response?.data?.error || "Failed to fetch course.";
+        setError(errorMessage);
         if (err.response?.status === 401) navigate("/login");
       }
     };
 
     const fetchCategories = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "http://localhost:5000/courses/category",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        console.log("EditCourse: Fetching categories"); // Debug
+        const response = await api.get("/courses/category");
         setCategories(response.data.data);
+        console.log("EditCourse: Categories fetched:", response.data.data); // Debug
       } catch (err) {
-        setError(`Failed to fetch categories: ${err.message}.`);
+        console.error(
+          "EditCourse: Fetch Categories Error:",
+          err.response?.status,
+          err.response?.data || err.message
+        );
+        setError("Failed to fetch categories.");
       } finally {
         setIsFetching(false);
       }
@@ -79,25 +91,37 @@ function EditCourse() {
 
   const onSubmit = async (data) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `http://localhost:5000/courses/${courseId}`,
-        {
-          title: data.title,
-          description: data.description,
-          categoryId: parseInt(data.categoryId),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      console.log("EditCourse: Updating courseId:", courseId, "payload:", data); // Debug
+      await api.put(`/courses/${courseId}`, {
+        title: data.title,
+        description: data.description,
+        categoryId: parseInt(data.categoryId),
+      });
+      console.log("EditCourse: Course updated successfully"); // Debug
       navigate("/instructor-dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.error || `Failed to update course: ${err.message}`
+      console.error(
+        "EditCourse: Update Course Error:",
+        err.response?.status,
+        err.response?.data || err.message
       );
+      const errorMessage =
+        err.response?.status === 401
+          ? "Unauthorized. Please log in again."
+          : err.response?.status === 403
+          ? "You are not authorized to update this course."
+          : err.response?.data?.error || "Failed to update course.";
+      setError(errorMessage);
+      if (err.response?.status === 401) navigate("/login");
     }
   };
 
-  if (loading || !user || user.role !== "Instructor") return null;
+  if (loading) {
+    return <div className="text-center text-gray-700 text-lg">Loading...</div>;
+  }
+  if (!user || user.role !== "Instructor") {
+    return null; // Handled by useEffect redirect
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -109,7 +133,7 @@ function EditCourse() {
           <div className="text-center">
             <p className="text-red-500 mb-4">{error}</p>
             <button
-              onClick={() => navigate("/instructor-dashboard")}
+              onClick={() => navigate("/instructor/dashboard")}
               className="bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition"
             >
               Back to Dashboard
@@ -120,8 +144,8 @@ function EditCourse() {
             Loading course...
           </div>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="mb-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Title
               </label>
@@ -136,7 +160,7 @@ function EditCourse() {
                 </p>
               )}
             </div>
-            <div className="mb-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
@@ -152,7 +176,7 @@ function EditCourse() {
                 </p>
               )}
             </div>
-            <div className="mb-6">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Category
               </label>

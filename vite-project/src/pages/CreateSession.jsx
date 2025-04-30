@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import AuthContext from "../context/AuthContext";
+import api from "../api"; // Use api.js with cookie-based auth
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -48,11 +48,18 @@ function CreateSession() {
   });
 
   useEffect(() => {
-    if (loading) return;
-    if (!user || user.role !== "Instructor") navigate("/");
+    if (loading) {
+      console.log("CreateSession: Waiting for auth to load"); // Debug
+      return;
+    }
+    if (!user || user.role !== "Instructor") {
+      console.log("CreateSession: Redirecting to /login, user:", user); // Debug
+      navigate("/login"); // Redirect to login
+    }
     if (!courseId || isNaN(courseId)) {
+      console.log("CreateSession: Invalid courseId:", courseId); // Debug
       setError("Invalid course ID.");
-      setTimeout(() => navigate("/instructor-dashboard"), 3000);
+      setTimeout(() => navigate("/instructor/dashboard"), 3000); // Match dashboard route
     }
   }, [courseId, user, loading, navigate]);
 
@@ -60,19 +67,29 @@ function CreateSession() {
     setIsSubmitting(true);
     setError("");
     try {
-      const token = localStorage.getItem("token");
+      console.log(
+        "CreateSession: Creating session for courseId:",
+        courseId,
+        "payload:",
+        data
+      ); // Debug
       const payload = {
         title: data.title,
         youtubeUrl: data.youtubeUrl,
         content: content || "<p>No content provided.</p>",
       };
-      const response = await axios.post(
-        `http://localhost:5000/sessions/courses/${courseId}/sessions`,
-        payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const response = await api.post(
+        `/sessions/courses/${courseId}/sessions`,
+        payload
       );
+      console.log("CreateSession: Session created:", response.data); // Debug
       navigate(`/instructor/courses/${courseId}`);
     } catch (err) {
+      console.error(
+        "CreateSession: Failed to create session:",
+        err.response?.status,
+        err.response?.data || err.message
+      );
       const errorMessage =
         err.response?.status === 401
           ? "Unauthorized. Please log in again."
@@ -80,13 +97,21 @@ function CreateSession() {
           ? "You do not own this course."
           : err.response?.data?.error || "Failed to create session.";
       setError(errorMessage);
-      if (err.response?.status === 401) navigate("/login");
+      if (err.response?.status === 401) {
+        console.log("CreateSession: 401 detected, redirecting to /login"); // Debug
+        navigate("/login");
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (loading || !user || user.role !== "Instructor") return null;
+  if (loading) {
+    return <div className="text-center text-gray-700 text-lg">Loading...</div>;
+  }
+  if (!user || user.role !== "Instructor") {
+    return null; // Handled by useEffect redirect
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">

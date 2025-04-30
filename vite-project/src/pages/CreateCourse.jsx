@@ -1,8 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import axios from "axios";
 import AuthContext from "../context/AuthContext";
+import api from "../api"; // Use api.js with cookie-based auth
 import "../index.css";
 
 function CreateCourse() {
@@ -25,27 +25,36 @@ function CreateCourse() {
   });
 
   useEffect(() => {
-    if (loading) return;
+    if (loading) {
+      console.log("CreateCourse: Waiting for auth to load"); // Debug
+      return;
+    }
     if (!user || user.role !== "Instructor") {
-      navigate("/");
+      console.log("CreateCourse: Redirecting to /, user:", user); // Debug
+      navigate("/login"); // Redirect to login
       return;
     }
 
     const fetchCategories = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(
-          "http://localhost:5000/courses/category",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        setCategories(response.data.data);
-        if (response.data.data.length > 0) {
+        console.log("CreateCourse: Fetching categories for user:", user.id); // Debug
+        const response = await api.get("/courses/category");
+        console.log("CreateCourse: Categories response:", response.data); // Debug
+        setCategories(response.data.data || []);
+        if (response.data.data?.length > 0) {
           setValue("categoryId", response.data.data[0].id.toString());
         }
       } catch (err) {
-        setError(`Failed to fetch categories: ${err.message}`);
+        console.error(
+          "CreateCourse: Failed to fetch categories:",
+          err.response?.status,
+          err.response?.data || err.message
+        );
+        setError(
+          `Failed to fetch categories: ${
+            err.response?.data?.error || err.message
+          }`
+        );
       }
     };
     fetchCategories();
@@ -53,29 +62,42 @@ function CreateCourse() {
 
   const onSubmit = async (data) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        "http://localhost:5000/courses",
-        {
-          title: data.title,
-          description: data.description,
-          categoryId: parseInt(data.categoryId),
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      console.log("CreateCourse: Creating course for user:", user.id, data); // Debug
+      const response = await api.post("/courses", {
+        title: data.title,
+        description: data.description,
+        categoryId: parseInt(data.categoryId),
+      });
+      console.log("CreateCourse: Course created:", response.data); // Debug
       setNewCourseId(response.data.data.id);
     } catch (err) {
-      setError(`Failed to create course: ${err.message}`);
+      console.error(
+        "CreateCourse: Failed to create course:",
+        err.response?.status,
+        err.response?.data || err.message
+      );
+      setError(
+        `Failed to create course: ${err.response?.data?.error || err.message}`
+      );
     }
   };
 
   const handleAddSections = () => {
     if (newCourseId) {
+      console.log(
+        "CreateCourse: Navigating to sessions for courseId:",
+        newCourseId
+      ); // Debug
       navigate(`/instructor/courses/${newCourseId}/sessions/new`);
     }
   };
 
-  if (loading || !user || user.role !== "Instructor") return null;
+  if (loading) {
+    return <div className="text-center text-gray-700 text-lg">Loading...</div>;
+  }
+  if (!user || user.role !== "Instructor") {
+    return null; // Handled by useEffect redirect
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -96,7 +118,7 @@ function CreateCourse() {
               Add Sections
             </button>
             <button
-              onClick={() => navigate("/instructor-dashboard")}
+              onClick={() => navigate("/instructor/dashboard")} // Match dashboard route
               className="bg-gray-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-gray-700 transition mt-4"
             >
               Back to Dashboard
@@ -167,7 +189,7 @@ function CreateCourse() {
               </button>
               <button
                 type="button"
-                onClick={() => navigate("/instructor-dashboard")}
+                onClick={() => navigate("/instructor/dashboard")}
                 className="flex-1 bg-gray-600 text-white py-3 rounded-lg font-semibold hover:bg-gray-700 transition"
               >
                 Cancel
