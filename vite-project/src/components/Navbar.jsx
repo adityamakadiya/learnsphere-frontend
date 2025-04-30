@@ -5,13 +5,11 @@ import "../index.css";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { user, setUser } = useContext(AuthContext);
+  const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-    navigate("/");
+    logout(); // Call context logout
     setIsOpen(false);
   };
 
@@ -48,7 +46,7 @@ function Navbar() {
                 >
                   Home
                 </Link>
-                {user.role === "Student" && (
+                {user.role === 'Student' && (
                   <>
                     <Link
                       to="/student/dashboard"
@@ -64,7 +62,7 @@ function Navbar() {
                     </Link>
                   </>
                 )}
-                {user.role === "Instructor" && (
+                {user.role === 'Instructor' && (
                   <>
                     <Link
                       to="/instructor-dashboard"
@@ -112,7 +110,7 @@ function Navbar() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+                d={isOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
               />
             </svg>
           </button>
@@ -147,7 +145,7 @@ function Navbar() {
                 >
                   Home
                 </Link>
-                {user.role === "Student" && (
+                {user.role === 'Student' && (
                   <>
                     <Link
                       to="/student/dashboard"
@@ -165,7 +163,7 @@ function Navbar() {
                     </Link>
                   </>
                 )}
-                {user.role === "Instructor" && (
+                {user.role === 'Instructor' && (
                   <>
                     <Link
                       to="/instructor-dashboard"
