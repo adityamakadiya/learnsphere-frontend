@@ -13,11 +13,28 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    if (!email.includes("@") || password.length < 6) {
+      setError(
+        "Please enter a valid email and a password with at least 6 characters."
+      );
+      return;
+    }
     try {
+      console.log("Register: Submitting:", { email, password, role }); // Debug
       await register(email, password, role);
+      console.log("Register: Success, navigating to /login"); // Debug
       navigate("/login");
     } catch (err) {
-      setError(err.response?.data?.error || "Registration failed");
+      console.error(
+        "Register: Error:",
+        err.response?.status,
+        err.response?.data || err.message
+      ); // Debug
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Registration failed. Please try again."
+      );
     }
   };
 
@@ -90,4 +107,3 @@ function Register() {
 }
 
 export default Register;
-  
