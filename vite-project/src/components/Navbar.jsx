@@ -9,7 +9,7 @@ function Navbar() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout(); // Call context logout
+    logout();
     setIsOpen(false);
   };
 
@@ -46,7 +46,7 @@ function Navbar() {
                 >
                   Home
                 </Link>
-                {user.role === 'Student' && (
+                {user.role === "Student" && (
                   <>
                     <Link
                       to="/student/dashboard"
@@ -62,7 +62,7 @@ function Navbar() {
                     </Link>
                   </>
                 )}
-                {user.role === 'Instructor' && (
+                {user.role === "Instructor" && (
                   <>
                     <Link
                       to="/instructor-dashboard"
@@ -77,10 +77,10 @@ function Navbar() {
                       Add Course
                     </Link>
                     <Link
-                      to="/instructor/profile"
+                      to="/instructor/analytics"
                       className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg text-sm font-medium"
                     >
-                      Profile
+                      Analytics Dashboard
                     </Link>
                   </>
                 )}
@@ -110,7 +110,7 @@ function Navbar() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                d={isOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+                d={isOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
               />
             </svg>
           </button>
@@ -145,7 +145,7 @@ function Navbar() {
                 >
                   Home
                 </Link>
-                {user.role === 'Student' && (
+                {user.role === "Student" && (
                   <>
                     <Link
                       to="/student/dashboard"
@@ -163,7 +163,7 @@ function Navbar() {
                     </Link>
                   </>
                 )}
-                {user.role === 'Instructor' && (
+                {user.role === "Instructor" && (
                   <>
                     <Link
                       to="/instructor-dashboard"
@@ -180,11 +180,11 @@ function Navbar() {
                       Add Course
                     </Link>
                     <Link
-                      to="/instructor/profile"
+                      to="/instructor/analytics"
                       className="block text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg text-base font-medium"
                       onClick={toggleMenu}
                     >
-                      Profile
+                      Analytics Dashboard
                     </Link>
                   </>
                 )}

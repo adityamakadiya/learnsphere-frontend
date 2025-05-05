@@ -141,7 +141,7 @@ function BrowseCourses() {
     authLoading,
     "user:",
     user
-  ); // Debug
+  ); 
 
   if (authLoading) {
     return <div className="text-center text-gray-700 text-lg">Loading...</div>;

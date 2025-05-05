@@ -14,6 +14,7 @@ import BrowseCourses from "./pages/Student/BrowseCourses";
 import StudentDashboard from "./pages/Student/StudentDashboard";
 import CourseDetailsStudents from "./pages/Student/CourseDetailsStudents";
 import UpdateSession from "./pages/UpdateSession";
+import InstructorAnalytics from "./pages/InstructorAnalytics";
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
           path="/instructor/courses/:courseId/sessions/:sessionId/edit"
           element={<UpdateSession />}
         />
+        <Route path="/instructor/analytics" element={<InstructorAnalytics />} />
       </Routes>
     </AuthProvider>
   );

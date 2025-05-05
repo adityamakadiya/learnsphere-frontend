@@ -20,20 +20,22 @@ function Register() {
       return;
     }
     try {
-      console.log("Register: Submitting:", { email, password, role }); // Debug
+      console.log("Register: Submitting:", { email, password, role });
       await register(email, password, role);
-      console.log("Register: Success, navigating to /login"); // Debug
+      console.log("Register: Success, navigating to /login");
       navigate("/login");
     } catch (err) {
       console.error(
         "Register: Error:",
+        err.message,
         err.response?.status,
-        err.response?.data || err.message
-      ); // Debug
+        err.response?.data
+      );
       setError(
         err.response?.data?.error ||
           err.response?.data?.message ||
-          "Registration failed. Please try again."
+          err.message || // Include network error message
+          "Registration failed. Please check your network or try again."
       );
     }
   };

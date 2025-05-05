@@ -16,12 +16,8 @@ function Login() {
       const user = await login(email, password);
       console.log("Login: Success, user:", user); // Debug
       console.log(user.user.role);
-      
-      navigate(
-        user.user.role === "Instructor"
-          ? "/"
-          : "/student/dashboard"
-      );
+
+      navigate(user.user.role === "Instructor" ? "/" : "/student/dashboard");
     } catch (err) {
       console.error("Login: Error:", err.message, err.response?.data); // Debug
       setError(err.message || "Login failed");
