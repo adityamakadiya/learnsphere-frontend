@@ -5,11 +5,14 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import App from "./App.jsx";
 import "./index.css";
 
+const Google_Client_Id =
+  "478342189738-k0ocoa26jsp3jl2l6sku7cgcojmmpjlp.apps.googleusercontent.com";
+
 try{
   ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
       <BrowserRouter>
-        <GoogleOAuthProvider clientId="654482025152-clsms47b79fjsi025bhf34f7isvc3uju.apps.googleusercontent.com">
+        <GoogleOAuthProvider clientId = {Google_Client_Id}>
           <App />
         </GoogleOAuthProvider>
       </BrowserRouter>
@@ -19,7 +22,7 @@ try{
   ReactDOM.createRoot(document.getElementById("root")).render(
     <React.StrictMode>
       <BrowserRouter>
-        <GoogleOAuthProvider clientId="654482025152-clsms47b79fjsi025bhf34f7isvc3uju.apps.googleusercontent.com">
+        <GoogleOAuthProvider clientId={Google_Client_Id}>
           <App />
         </GoogleOAuthProvider>
       </BrowserRouter>

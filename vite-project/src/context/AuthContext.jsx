@@ -76,6 +76,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const googleLogin = async (idToken) => {
+    try {
+      console.log("AuthContext: Google login with idToken:", !!idToken); // Debug
+      const response = await api.post(
+        "/auth/google",
+        { idToken },
+        {
+          withCredentials: true,
+        }
+      );
+      console.log("AuthContext: Google login response:", response.data); // Debug
+      setUser(response.data.user);
+      navigate(
+        response.data.user.role === "Instructor" ? "/" : "/student/dashboard"
+      );
+      return response.data.user;
+    } catch (err) {
+      console.error(
+        "AuthContext: Google login error:",
+        err.response?.status,
+        err.response?.data || err.message
+      );
+      throw err;
+    }
+  };
+
   const logout = async () => {
     try {
       console.log("AuthContext: Logging out"); // Debug
@@ -95,7 +121,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, register, login, googleLogin, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

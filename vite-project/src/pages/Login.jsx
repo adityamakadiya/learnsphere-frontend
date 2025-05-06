@@ -1,27 +1,37 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login } = useContext(AuthContext);
+  const { login, user } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  // Handle navigation after render using useEffect
+  useEffect(() => {
+    if (user) {
+      navigate(user.role === "Instructor" ? "/" : "/student/dashboard");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      const user = await login(email, password);
-      console.log("Login: Success, user:", user); // Debug
-      console.log(user.user.role);
-
-      navigate(user.user.role === "Instructor" ? "/" : "/student/dashboard");
+      const response = await login(email, password);
+      console.log("Login: Success, user:", response.user); // Debug
+      // Navigation will be handled by useEffect
     } catch (err) {
       console.error("Login: Error:", err.message, err.response?.data); // Debug
-      setError(err.message || "Login failed");
+      setError(err.response?.data?.error || err.message || "Login failed");
     }
+  };
+
+  const handleGoogleError = (error) => {
+    setError(error);
   };
 
   return (
@@ -65,6 +75,19 @@ function Login() {
             Login
           </button>
         </form>
+        <div className="mt-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or</span>
+            </div>
+          </div>
+          <div className="mt-4">
+            <GoogleLoginButton onError={handleGoogleError} />
+          </div>
+        </div>
         <p className="text-sm text-gray-600 text-center mt-6">
           Don't have an account?{" "}
           <Link

@@ -1,13 +1,14 @@
 import { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
+import GoogleLoginButton from "../components/GoogleLoginButton";
 
 function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("Student");
   const [error, setError] = useState("");
-  const { register } = useContext(AuthContext);
+  const { register, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -34,11 +35,20 @@ function Register() {
       setError(
         err.response?.data?.error ||
           err.response?.data?.message ||
-          err.message || // Include network error message
+          err.message ||
           "Registration failed. Please check your network or try again."
       );
     }
   };
+
+  const handleGoogleError = (error) => {
+    setError(error);
+  };
+
+  // Redirect if already logged in
+  if (user) {
+    navigate(user.role === "Instructor" ? "/" : "/student/dashboard");
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -94,6 +104,19 @@ function Register() {
             Register
           </button>
         </form>
+        <div className="mt-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or</span>
+            </div>
+          </div>
+          <div className="mt-4">
+            <GoogleLoginButton onError={handleGoogleError} />
+          </div>
+        </div>
         <p className="text-sm text-gray-600 text-center mt-6">
           Already have an account?{" "}
           <Link
