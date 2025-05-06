@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import AuthContext from "../../context/AuthContext";
 import api from "../../api";
 import CategoryFilter from "../../components/CategoryFilter";
+import CourseCard from "../../components/CourseCard";
 import "../../index.css";
 
 function BrowseCourses() {
@@ -46,7 +47,32 @@ function BrowseCourses() {
           const coursesResponse = await api.get(coursesUrl);
           coursesData = coursesResponse.data.data;
           console.log("BrowseCourses: Courses:", coursesData); // Debug
-          setCourses(coursesData);
+          // Fetch ratings for each course
+          const coursesWithRatings = await Promise.all(
+            coursesData.map(async (course) => {
+              try {
+                const ratingsResponse = await api.get(
+                  `/ratings/courses/${course.id}/ratings`
+                );
+                console.log(
+                  `BrowseCourses: Ratings for course ${course.id}:`,
+                  ratingsResponse.data
+                );
+                return {
+                  ...course,
+                  averageRating: ratingsResponse.data.averageRating || 0,
+                  ratingCount: ratingsResponse.data.ratingCount || 0,
+                };
+              } catch (err) {
+                console.error(
+                  `BrowseCourses: Failed to fetch ratings for course ${course.id}:`,
+                  err
+                );
+                return { ...course, averageRating: 0, ratingCount: 0 };
+              }
+            })
+          );
+          setCourses(coursesWithRatings);
         } catch (courseErr) {
           console.error(
             "BrowseCourses: Failed to fetch courses:",
@@ -141,7 +167,7 @@ function BrowseCourses() {
     authLoading,
     "user:",
     user
-  ); 
+  );
 
   if (authLoading) {
     return <div className="text-center text-gray-700 text-lg">Loading...</div>;
@@ -183,33 +209,12 @@ function BrowseCourses() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredCourses.map((course) => (
-              <div
+              <CourseCard
                 key={course.id}
-                className="bg-gray-50 p-6 rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition aspect-square flex flex-col"
-              >
-                <h2 className="text-xl font-semibold text-gray-800 mb-2 truncate">
-                  {course.title}
-                </h2>
-                <p className="text-gray-600 mb-4 flex-grow line-clamp-3">
-                  {course.description || "No description available."}
-                </p>
-                <p className="text-gray-500 text-sm mb-4">
-                  Category: {course.category?.name || "Unknown"}
-                </p>
-                <button
-                  onClick={() => handleEnroll(course.id)}
-                  disabled={enrolledCourseIds.includes(course.id)}
-                  className={`w-full py-2 rounded-lg text-white font-medium transition ${
-                    enrolledCourseIds.includes(course.id)
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  }`}
-                >
-                  {enrolledCourseIds.includes(course.id)
-                    ? "Enrolled"
-                    : "Enroll"}
-                </button>
-              </div>
+                course={course}
+                isEnrolled={enrolledCourseIds.includes(course.id)}
+                onEnroll={handleEnroll}
+              />
             ))}
           </div>
         )}

@@ -2,6 +2,7 @@ import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
 import api from "../api";
+import CourseCard from "../components/CourseCard";
 import "../index.css";
 
 function Home() {
@@ -70,23 +71,6 @@ function Home() {
     }
   }, [user, navigate]);
 
-  // Star rating component
-  const StarRating = ({ rating }) => {
-    const stars = Array(5)
-      .fill(0)
-      .map((_, i) => (
-        <span
-          key={i}
-          className={
-            i < Math.round(rating) ? "text-yellow-400" : "text-gray-300"
-          }
-        >
-          ★
-        </span>
-      ));
-    return <div className="flex">{stars}</div>;
-  };
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4 py-12">
       <div className="bg-white p-10 rounded-2xl shadow-xl w-full max-w-6xl">
@@ -117,30 +101,7 @@ function Home() {
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {courses.map((course) => (
-                      <div
-                        key={course.id}
-                        className="bg-gray-50 p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300"
-                      >
-                        <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                          {course.title}
-                        </h2>
-                        <p className="text-gray-600 mb-4">
-                          {course.description}
-                        </p>
-                        <p className="text-gray-500 text-sm mb-2">
-                          Category: {course.category?.name || "Unknown"}
-                        </p>
-                        <div className="flex items-center mb-2">
-                          <StarRating rating={course.averageRating} />
-                          <span className="ml-2 text-gray-600 text-sm">
-                            {course.averageRating.toFixed(1)}
-                          </span>
-                        </div>
-                        <p className="text-gray-500 text-sm">
-                          {course.ratingCount}{" "}
-                          {course.ratingCount === 1 ? "review" : "reviews"}
-                        </p>
-                      </div>
+                      <CourseCard key={course.id} course={course} />
                     ))}
                   </div>
                 )}
