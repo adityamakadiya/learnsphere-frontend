@@ -22,8 +22,6 @@ function Login() {
     setError("");
     try {
       const response = await login(email, password);
-      console.log("Login: Success, user:", response.user); // Debug
-      // Navigation will be handled by useEffect
     } catch (err) {
       console.error("Login: Error:", err.message, err.response?.data); // Debug
       setError(err.response?.data?.error || err.message || "Login failed");

@@ -18,18 +18,13 @@ function BrowseCourses() {
   const [errors, setErrors] = useState([]);
 
   useEffect(() => {
-    console.log(
-      "BrowseCourses: useEffect, authLoading:",
-      authLoading,
-      "user:",
-      user
-    ); // Debug
+    // console.log("user:",user); // Debug
     if (authLoading) {
-      console.log("BrowseCourses: Waiting for auth"); // Debug
+      // console.log("BrowseCourses: Waiting for auth"); // Debug
       return;
     }
     if (!user || user.role !== "Student") {
-      console.log("BrowseCourses: Redirecting to /login, user:", user); // Debug
+      // console.log("BrowseCourses: Redirecting to /login, user:", user); // Debug
       navigate("/login", { replace: true });
       return;
     }
@@ -46,7 +41,7 @@ function BrowseCourses() {
         try {
           const coursesResponse = await api.get(coursesUrl);
           coursesData = coursesResponse.data.data;
-          console.log("BrowseCourses: Courses:", coursesData); // Debug
+          // console.log("BrowseCourses: Courses:", coursesData); // Debug
           // Fetch ratings for each course
           const coursesWithRatings = await Promise.all(
             coursesData.map(async (course) => {
@@ -103,10 +98,7 @@ function BrowseCourses() {
         try {
           const enrollmentsResponse = await api.get("/students/enrollments");
           enrolledIds = enrollmentsResponse.data.data.map((e) => e.course.id);
-          console.log(
-            "BrowseCourses: Enrollments:",
-            enrollmentsResponse.data.data
-          ); // Debug
+          // console.log("BrowseCourses: Enrollments:",enrollmentsResponse.data.data); // Debug
           setEnrolledCourseIds(enrolledIds);
         } catch (enrollErr) {
           console.error(
@@ -142,7 +134,6 @@ function BrowseCourses() {
   const handleEnroll = async (courseId) => {
     try {
       await api.post(`/students/courses/${courseId}/enroll`, {});
-      console.log("BrowseCourses: Enroll response: Success"); // Debug
       setEnrolledCourseIds([...enrolledCourseIds, courseId]);
       alert("Enrolled successfully!");
     } catch (err) {
@@ -162,18 +153,11 @@ function BrowseCourses() {
         course.description.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  console.log(
-    "BrowseCourses: Render, authLoading:",
-    authLoading,
-    "user:",
-    user
-  );
-
   if (authLoading) {
     return <div className="text-center text-gray-700 text-lg">Loading...</div>;
   }
   if (!user || user.role !== "Student") {
-    console.log("BrowseCourses: Render redirect, user:", user); // Debug
+    // console.log("BrowseCourses: Render redirect, user:", user); // Debug
     return null; // Handled by useEffect redirect
   }
 

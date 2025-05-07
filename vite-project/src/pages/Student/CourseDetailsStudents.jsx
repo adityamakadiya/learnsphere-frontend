@@ -5,7 +5,7 @@ import api from "../../api";
 import CourseHeader from "../../components/CourseHeader";
 import CourseInfo from "../../components/CourseInfo";
 import ProgressBar from "../../components/ProgressBar";
-import ReviewForm from "../../components/ReviewForm";
+import CourseReviews from "../../components/CourseReviews";
 import SessionCard from "../../components/SessionCard";
 import "../../index.css";
 
@@ -24,24 +24,17 @@ function CourseDetailsStudents() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [review, setReview] = useState(null);
+  const [courseReviews, setCourseReviews] = useState([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [ratingCount, setRatingCount] = useState(0);
   const [stars, setStars] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [reviewError, setReviewError] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
 
   useEffect(() => {
-    console.log(
-      "CourseDetailsStudents: useEffect, authLoading:",
-      authLoading,
-      "user:",
-      user
-    );
-    if (authLoading) {
-      console.log("CourseDetailsStudents: Waiting for auth");
-      return;
-    }
+    if (authLoading) return;
     if (!user || user.role !== "Student") {
-      console.log("CourseDetailsStudents: Redirecting to /login, user:", user);
       navigate("/login", { replace: true });
       return;
     }
@@ -50,12 +43,7 @@ function CourseDetailsStudents() {
       setLoading(true);
       setError("");
       try {
-        // Fetch enrolled courses
         const enrollmentsResponse = await api.get("/students/enrollments");
-        console.log(
-          "CourseDetailsStudents: Enrollments:",
-          enrollmentsResponse.data.data
-        );
         const courseData = enrollmentsResponse.data.data.find(
           (e) => e.course.id === parseInt(courseId)
         )?.course;
@@ -65,55 +53,67 @@ function CourseDetailsStudents() {
         }
         setCourse(courseData);
 
-        // Fetch sessions
         const sessionsResponse = await api.get(
           `/students/courses/${courseId}/sessions`
         );
         const sessionsData = sessionsResponse.data.data;
-        console.log("CourseDetailsStudents: Sessions:", sessionsData);
         setSessions(sessionsData);
         if (sessionsData.length === 0) {
           setError("No sessions available for this course.");
         }
 
-        // Fetch progress
         const progressResponse = await api.get(
           `/progress/${user.id}/${courseId}`
         );
         const progressData = progressResponse.data;
-        console.log("CourseDetailsStudents: Progress:", progressData);
         setProgress({
           completionPercentage: progressData.completionPercentage,
           completedSessions: progressData.completedSessions,
           totalSessions: progressData.totalSessions,
         });
+
         const completedResponse = await api.get(
           `/students/courses/${courseId}/progress`
         );
-        const completedData = completedResponse.data.data;
-        console.log(
-          "CourseDetailsStudents: Completed sessions:",
-          completedData
-        );
         setCompletedSessionIds(
-          completedData.filter((p) => p.completed).map((p) => p.sessionId)
+          completedResponse.data.data
+            .filter((p) => p.completed)
+            .map((p) => p.sessionId)
         );
 
-        // Fetch user's review
-        const reviewResponse = await api.get(
-          `/ratings/courses/${courseId}/user/${user.id}`
-        );
-        console.log("CourseDetailsStudents: Review:", reviewResponse.data);
-        if (reviewResponse.data.data) {
-          setReview(reviewResponse.data.data);
-          setStars(reviewResponse.data.data.stars);
-          setReviewText(reviewResponse.data.data.review || "");
+        try {
+          const reviewResponse = await api.get(
+            `/ratings/courses/${courseId}/user/${user.id}`
+          );
+          if (reviewResponse.data.data) {
+            setReview(reviewResponse.data.data);
+            setStars(reviewResponse.data.data.stars);
+            setReviewText(reviewResponse.data.data.review || "");
+          } else {
+            setReview(null);
+          }
+        } catch (reviewErr) {
+          if (reviewErr.response?.status === 404) {
+            setReview(null);
+          } else {
+            const errorMsg =
+              reviewErr.response?.data?.error ||
+              "Unable to fetch review data. Please try again.";
+            setError(errorMsg);
+          }
+        }
+
+        try {
+          const reviewsResponse = await api.get(
+            `/ratings/courses/${courseId}/ratings`
+          );
+          setCourseReviews(reviewsResponse.data.ratings || []);
+          setAverageRating(reviewsResponse.data.averageRating || 0);
+          setRatingCount(reviewsResponse.data.ratingCount || 0);
+        } catch (reviewsErr) {
+          setError("Failed to load course reviews.");
         }
       } catch (err) {
-        console.error(
-          "CourseDetailsStudents: Error:",
-          err.response?.data || err.message
-        );
         const errorMessage =
           err.response?.status === 403
             ? "You are not enrolled in this course."
@@ -131,37 +131,18 @@ function CourseDetailsStudents() {
 
   const handleMarkComplete = async (sessionId) => {
     try {
-      console.log(
-        "CourseDetailsStudents: Marking session complete:",
-        sessionId
-      );
-      const response = await api.post(
-        `/students/sessions/${sessionId}/complete`,
-        {}
-      );
-      console.log(
-        "CourseDetailsStudents: Mark complete response:",
-        response.data
-      );
+      await api.post(`/students/sessions/${sessionId}/complete`, {});
       setCompletedSessionIds([...completedSessionIds, sessionId]);
       const progressResponse = await api.get(
         `/progress/${user.id}/${courseId}`
       );
-      console.log(
-        "CourseDetailsStudents: Updated progress:",
-        progressResponse.data
-      );
       setProgress({
         completionPercentage: progressResponse.data.completionPercentage,
         completedSessions: progressResponse.data.completedSessions,
-        totalSessions: progressResponse.data.totalSessions,
+        totalSessions: progressData.totalSessions,
       });
       alert("Session marked as complete!");
     } catch (err) {
-      console.error(
-        "CourseDetailsStudents: Failed to mark complete:",
-        err.response?.data
-      );
       const errorMsg =
         err.response?.data?.error || "Failed to mark session complete.";
       alert(errorMsg);
@@ -190,25 +171,26 @@ function CourseDetailsStudents() {
     setSubmittingReview(true);
     setReviewError("");
     try {
-      console.log("CourseDetailsStudents: Submitting review:", {
-        stars,
-        reviewText,
-      });
       const response = await api.post(`/ratings/courses/${courseId}/ratings`, {
-        userId: user.id,
         stars,
         review: reviewText.trim(),
       });
-      console.log("CourseDetailsStudents: Review submitted:", response.data);
       setReview(response.data);
+      setCourseReviews([
+        ...courseReviews,
+        { ...response.data, user: { email: user.email } },
+      ]);
+      setAverageRating(
+        (
+          (averageRating * ratingCount + response.data.stars) /
+          (ratingCount + 1)
+        ).toFixed(1)
+      );
+      setRatingCount(ratingCount + 1);
       setStars(0);
       setReviewText("");
       alert("Review submitted successfully!");
     } catch (err) {
-      console.error(
-        "CourseDetailsStudents: Failed to submit review:",
-        err.response?.data
-      );
       setReviewError(err.response?.data?.error || "Failed to submit review.");
     } finally {
       setSubmittingReview(false);
@@ -217,49 +199,42 @@ function CourseDetailsStudents() {
 
   if (authLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen bg-gray-50">
         <div className="text-gray-700 text-lg animate-pulse">Loading...</div>
       </div>
     );
   }
-  if (!user || user.role !== "Student") {
-    console.log("CourseDetailsStudents: Render redirect, user:", user);
-    return null;
-  }
+  if (!user || user.role !== "Student") return null;
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8">
-        <CourseHeader
-          course={course}
-          error={error}
-          fetchCourseData={() => {}}
-        />
-        {loading ? (
-          <div className="text-center text-gray-600 animate-pulse">
-            Loading course details...
-          </div>
-        ) : !course ? (
-          <div className="text-center text-gray-600 text-lg">
-            Course not found.
-          </div>
-        ) : (
-          <div className="space-y-10">
-            <CourseInfo course={course} />
-            <ProgressBar loading={loading} progress={progress} />
-            <ReviewForm
-              review={review}
-              stars={stars}
-              setStars={setStars}
-              reviewText={reviewText}
-              setReviewText={setReviewText}
-              reviewError={reviewError}
-              submittingReview={submittingReview}
-              handleReviewSubmit={handleReviewSubmit}
-              courseId={courseId}
-            />
-            <section>
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6 animate-fade-in">
+          <CourseHeader
+            course={course}
+            error={error}
+            fetchCourseData={() => {}}
+          />
+          {loading ? (
+            <div className="text-center text-gray-600 animate-pulse">
+              Loading...
+            </div>
+          ) : !course ? (
+            <div className="text-center text-gray-600 text-base">
+              Course not found.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <CourseInfo course={course} />
+              <ProgressBar loading={loading} progress={progress} />
+            </div>
+          )}
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <section className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 animate-fade-in">
+              <h3 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
                 Sessions
               </h3>
               {sessions.length === 0 && !error ? (
@@ -267,7 +242,7 @@ function CourseDetailsStudents() {
                   No sessions available.
                 </div>
               ) : (
-                <div className="flex flex-col gap-6 max-w-3xl mx-auto">
+                <div className="flex flex-col gap-4">
                   {sessions.map((session) => (
                     <SessionCard
                       key={session.id}
@@ -280,7 +255,25 @@ function CourseDetailsStudents() {
               )}
             </section>
           </div>
-        )}
+
+          <div className="lg:col-span-1">
+            <CourseReviews
+              courseId={courseId}
+              review={review}
+              courseReviews={courseReviews}
+              averageRating={averageRating}
+              ratingCount={ratingCount}
+              stars={stars}
+              setStars={setStars}
+              reviewText={reviewText}
+              setReviewText={setReviewText}
+              reviewError={reviewError}
+              submittingReview={submittingReview}
+              handleReviewSubmit={handleReviewSubmit}
+              userEmail={user.email}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

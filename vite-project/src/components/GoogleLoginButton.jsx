@@ -6,10 +6,10 @@ const GoogleLoginButton = ({ onError }) => {
   const { googleLogin } = useContext(AuthContext);
 
   const handleSuccess = async (response) => {
-    console.log("GoogleLoginButton: ID Token:", response.credential); // Debug
+    // console.log("GoogleLoginButton: ID Token:", response.credential); // Debug
     try {
       const user = await googleLogin(response.credential);
-      console.log("GoogleLoginButton: Success, user:", user); // Debug
+      // console.log("GoogleLoginButton: Success, user:", user); // Debug
     } catch (error) {
       console.error(
         "GoogleLoginButton: Error:",

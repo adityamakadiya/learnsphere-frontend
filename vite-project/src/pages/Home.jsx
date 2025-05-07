@@ -17,9 +17,7 @@ function Home() {
       setLoading(true);
       setError("");
       try {
-        console.log("Home: Fetching courses for user:", user?.id);
         const response = await api.get("/courses/allCourses");
-        console.log("Home: Courses response:", response.data);
 
         // Fetch ratings for each course
         const coursesWithRatings = await Promise.all(
@@ -27,10 +25,6 @@ function Home() {
             try {
               const ratingsResponse = await api.get(
                 `/ratings/courses/${course.id}/ratings`
-              );
-              console.log(
-                `Home: Ratings for course ${course.id}:`,
-                ratingsResponse.data
               );
               return {
                 ...course,
