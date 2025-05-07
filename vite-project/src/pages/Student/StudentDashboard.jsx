@@ -12,18 +12,18 @@ function StudentDashboard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    console.log(
-      "StudentDashboard: useEffect, authLoading:",
-      authLoading,
-      "user:",
-      user
-    ); // Debug
+    // console.log(
+    //   "StudentDashboard: useEffect, authLoading:",
+    //   authLoading,
+    //   "user:",
+    //   user
+    // ); // Debug
     if (authLoading) {
-      console.log("StudentDashboard: Waiting for auth");
+      // console.log("StudentDashboard: Waiting for auth");
       return;
     }
     if (!user || user.role !== "Student") {
-      console.log("StudentDashboard: Redirecting to /login, user:", user);
+      // console.log("StudentDashboard: Redirecting to /login, user:", user);
       navigate("/login", { replace: true });
       return;
     }
@@ -32,10 +32,10 @@ function StudentDashboard() {
       setLoading(true);
       setError("");
       try {
-        console.log("StudentDashboard: Fetching enrollments"); // Debug
+        // console.log("StudentDashboard: Fetching enrollments"); // Debug
         const response = await api.get("/students/enrollments");
         const enrollments = response.data.data;
-        console.log("StudentDashboard: Enrolled Courses:", enrollments);
+        // console.log("StudentDashboard: Enrolled Courses:", enrollments);
         setEnrolledCourses(enrollments.map((e) => e.course));
       } catch (err) {
         console.error(
@@ -45,7 +45,7 @@ function StudentDashboard() {
         );
         setError("Could not load enrolled courses.");
         if (err.response?.status === 401) {
-          console.log("StudentDashboard: 401, redirecting to /login");
+          // console.log("StudentDashboard: 401, redirecting to /login");
           navigate("/login", { replace: true });
         }
       } finally {
@@ -56,19 +56,19 @@ function StudentDashboard() {
     fetchEnrolledCourses();
   }, [user, authLoading, navigate]);
 
-  console.log(
-    "StudentDashboard: Render, authLoading:",
-    authLoading,
-    "user:",
-    user
-  ); // Debug
+  // console.log(
+  //   "StudentDashboard: Render, authLoading:",
+  //   authLoading,
+  //   "user:",
+  //   user
+  // ); // Debug
 
   if (authLoading) {
     return <div className="text-center text-gray-700 text-lg">Loading...</div>;
   }
   if (!user || user.role !== "Student") {
-    console.log("StudentDashboard: Render redirect, user:", user); // Debug
-    return null; // Handled by useEffect redirect
+    // console.log("StudentDashboard: Render redirect, user:", user); // Debug
+    return null; 
   }
 
   return (

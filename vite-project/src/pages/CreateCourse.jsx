@@ -26,20 +26,20 @@ function CreateCourse() {
 
   useEffect(() => {
     if (loading) {
-      console.log("CreateCourse: Waiting for auth to load"); // Debug
+      // console.log("CreateCourse: Waiting for auth to load"); // Debug
       return;
     }
     if (!user || user.role !== "Instructor") {
-      console.log("CreateCourse: Redirecting to /, user:", user); // Debug
+      // console.log("CreateCourse: Redirecting to /, user:", user); // Debug
       navigate("/login"); // Redirect to login
       return;
     }
 
     const fetchCategories = async () => {
       try {
-        console.log("CreateCourse: Fetching categories for user:", user.id); // Debug
+        // console.log("CreateCourse: Fetching categories for user:", user.id); // Debug
         const response = await api.get("/courses/category");
-        console.log("CreateCourse: Categories response:", response.data); // Debug
+        // console.log("CreateCourse: Categories response:", response.data); // Debug
         setCategories(response.data.data || []);
         if (response.data.data?.length > 0) {
           setValue("categoryId", response.data.data[0].id.toString());
@@ -62,13 +62,13 @@ function CreateCourse() {
 
   const onSubmit = async (data) => {
     try {
-      console.log("CreateCourse: Creating course for user:", user.id, data); // Debug
+      // console.log("CreateCourse: Creating course for user:", user.id, data); // Debug
       const response = await api.post("/courses", {
         title: data.title,
         description: data.description,
         categoryId: parseInt(data.categoryId),
       });
-      console.log("CreateCourse: Course created:", response.data); // Debug
+      // console.log("CreateCourse: Course created:", response.data); // Debug
       setNewCourseId(response.data.data.id);
     } catch (err) {
       console.error(
@@ -84,10 +84,10 @@ function CreateCourse() {
 
   const handleAddSections = () => {
     if (newCourseId) {
-      console.log(
-        "CreateCourse: Navigating to sessions for courseId:",
-        newCourseId
-      ); // Debug
+      // console.log(
+      //   "CreateCourse: Navigating to sessions for courseId:",
+      //   newCourseId
+      // ); // Debug
       navigate(`/instructor/courses/${newCourseId}/sessions/new`);
     }
   };

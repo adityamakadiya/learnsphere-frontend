@@ -23,7 +23,7 @@ function Register() {
     try {
       console.log("Register: Submitting:", { email, password, role });
       await register(email, password, role);
-      console.log("Register: Success, navigating to /login");
+      // console.log("Register: Success, navigating to /login");
       navigate("/login");
     } catch (err) {
       console.error(

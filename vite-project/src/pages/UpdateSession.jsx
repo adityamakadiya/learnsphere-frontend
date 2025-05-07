@@ -14,21 +14,16 @@ function UpdateSession() {
   const [formData, setFormData] = useState({
     title: "",
     youtubeUrl: "",
-    content: "",
+    content: "<p></p>",
   });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // Authentication check
   useEffect(() => {
-    if (loading) {
-      console.log("UpdateSession: Waiting for auth to load"); // Debug
-      return;
-    }
+    if (loading) return;
     if (!user || user.role !== "Instructor") {
-      console.log("UpdateSession: Redirecting to /login, user:", user); // Debug
       navigate("/login");
-      return;
     }
   }, [user, loading, navigate]);
 
@@ -36,25 +31,19 @@ function UpdateSession() {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        console.log(`UpdateSession: Fetching sessionId=${sessionId}`); // Debug
         const response = await api.get(`/sessions/sid/${sessionId}`);
-        console.log("UpdateSession: Session Response:", response.data); // Debug
         const session = response.data.data;
         if (!session) {
-          throw new Error("Session data not found in response");
+          throw new Error("Session data not found");
         }
-
+        // console.log("Fetched session content:", session.content); // Debug
         setFormData({
-          title: session.title,
+          title: session.title || "",
           youtubeUrl: session.youtubeUrl || "",
           content: session.content || "<p></p>",
         });
       } catch (err) {
-        console.error(
-          "UpdateSession: Fetch Session Error:",
-          err.response?.status,
-          err.response?.data || err.message
-        );
+        console.error("Fetch error:", err.response?.data || err.message);
         const errorMessage =
           err.response?.status === 401
             ? "Unauthorized. Please log in again."
@@ -62,7 +51,7 @@ function UpdateSession() {
             ? "You are not authorized to edit this session."
             : err.response?.status === 404
             ? "Session not found."
-            : err.response?.data?.error || "Failed to fetch session data.";
+            : "Failed to fetch session data.";
         setError(errorMessage);
         if (err.response?.status === 401) {
           navigate("/login");
@@ -72,7 +61,7 @@ function UpdateSession() {
     fetchSession();
   }, [sessionId, navigate]);
 
-  // Handle form input changes
+  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -80,35 +69,27 @@ function UpdateSession() {
 
   // Handle rich text editor changes
   const handleContentChange = (content) => {
+    // console.log("Content changed:", content); // Debug
     setFormData((prev) => ({ ...prev, content }));
   };
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Form submitted:", formData); // Debug
     setError("");
     setSubmitting(true);
     try {
-      console.log(
-        "UpdateSession: Updating sessionId:",
-        sessionId,
-        "payload:",
-        formData
-      ); // Debug
-      const response = await api.put(`/sessions/${sessionId}`, {
+      const payload = {
         title: formData.title,
         youtubeUrl: formData.youtubeUrl,
         content: formData.content || "<p>No content provided.</p>",
-      });
-      console.log("UpdateSession: Update Response:", response.data); // Debug
+      };
+      await api.put(`/sessions/${sessionId}`, payload);
       alert("Session updated successfully!");
       navigate(`/instructor/courses/${courseId}/sessions`);
     } catch (err) {
-      console.error(
-        "UpdateSession: Update Session Error:",
-        err.response?.status,
-        err.response?.data || err.message
-      );
+      console.error("Update error:", err.response?.data || err.message);
       const errorMessage =
         err.response?.status === 401
           ? "Unauthorized. Please log in again."
@@ -116,7 +97,7 @@ function UpdateSession() {
           ? "You are not authorized to update this session."
           : err.response?.status === 500
           ? "Server error. Please try again later."
-          : err.response?.data?.error || "Failed to update session.";
+          : "Failed to update session.";
       setError(errorMessage);
       if (err.response?.status === 401) {
         navigate("/login");
@@ -126,13 +107,17 @@ function UpdateSession() {
     }
   };
 
+  // Render loading state
   if (loading) {
     return <div className="text-center text-gray-700 text-lg">Loading...</div>;
   }
+
+  // Redirect handled by useEffect
   if (!user || user.role !== "Instructor") {
-    return null; // Handled by useEffect redirect
+    return null;
   }
 
+  // Form validation
   const isFormValid = formData.title && formData.content;
 
   return (
@@ -163,9 +148,8 @@ function UpdateSession() {
         onChange={handleInputChange}
       />
       <RichTextEditor
-        content={formData.content}
+        value={formData.content}
         onChange={handleContentChange}
-        initialContent={formData.content}
         error={formData.content ? "" : "Content is required"}
       />
     </FormContainer>

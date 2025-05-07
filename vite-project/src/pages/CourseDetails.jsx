@@ -22,11 +22,11 @@ function CourseDetails() {
 
   useEffect(() => {
     if (loading) {
-      console.log("CourseDetails: Waiting for auth to load");
+      // console.log("CourseDetails: Waiting for auth to load");
       return;
     }
     if (!user || user.role !== "Instructor") {
-      console.log("CourseDetails: Redirecting to /login, user:", user);
+      // console.log("CourseDetails: Redirecting to /login, user:", user);
       navigate("/login");
       return;
     }
@@ -37,24 +37,24 @@ function CourseDetails() {
       try {
         // Fetch course details
         const courseResponse = await api.get(`/courses/${courseId}`);
-        console.log("CourseDetails: Course response:", courseResponse.data);
+        // console.log("CourseDetails: Course response:", courseResponse.data);
         setCourse(courseResponse.data.data);
 
         // Fetch enrollments with progress
         const enrollmentsResponse = await api.get(
           `/progress/courses/${courseId}/enrollments`
         );
-        console.log(
-          "CourseDetails: Enrollments response:",
-          enrollmentsResponse.data
-        );
+        // console.log(
+        //   "CourseDetails: Enrollments response:",
+        //   enrollmentsResponse.data
+        // );
         setEnrollments(enrollmentsResponse.data || []);
 
         // Fetch ratings for the course
         const ratingsResponse = await api.get(
           `/ratings/courses/${courseId}/ratings`
         );
-        console.log("CourseDetails: Ratings response:", ratingsResponse.data);
+        // console.log("CourseDetails: Ratings response:", ratingsResponse.data);
         const fetchedRatings = Array.isArray(ratingsResponse.data.ratings)
           ? ratingsResponse.data.ratings
           : Array.isArray(ratingsResponse.data)
@@ -68,7 +68,7 @@ function CourseDetails() {
         );
         setError(err.response?.data?.error || "Failed to load data.");
         if (err.response?.status === 401) {
-          console.log("CourseDetails: 401 detected, redirecting to /login");
+          // console.log("CourseDetails: 401 detected, redirecting to /login");
           navigate("/login");
         }
       } finally {
@@ -88,7 +88,7 @@ function CourseDetails() {
       return;
     }
     try {
-      console.log("CourseDetails: Removing enrollmentId:", enrollmentId);
+      // console.log("CourseDetails: Removing enrollmentId:", enrollmentId);
       await api.delete(`/progress/enrollments/${enrollmentId}`);
       setEnrollments(
         enrollments.filter((enrollment) => enrollment.id !== enrollmentId)
@@ -113,7 +113,7 @@ function CourseDetails() {
       return;
     }
     try {
-      console.log("CourseDetails: Adding comment to ratingId:", ratingId);
+      // console.log("CourseDetails: Adding comment to ratingId:", ratingId);
       const response = await api.post(
         `/ratings/courses/${courseId}/ratings/${ratingId}/comments`,
         {
@@ -121,7 +121,7 @@ function CourseDetails() {
           userId: user.id,
         }
       );
-      console.log("CourseDetails: Comment added:", response.data);
+      // console.log("CourseDetails: Comment added:", response.data);
       setRatings((prevRatings) =>
         prevRatings.map((rating) =>
           rating.id === ratingId

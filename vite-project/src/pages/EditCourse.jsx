@@ -23,16 +23,16 @@ function EditCourse() {
 
   useEffect(() => {
     if (loading) {
-      console.log("EditCourse: Waiting for auth to load"); // Debug
+      // console.log("EditCourse: Waiting for auth to load"); // Debug
       return;
     }
     if (!user || user.role !== "Instructor") {
-      console.log("EditCourse: Redirecting to /login, user:", user); // Debug
+      // console.log("EditCourse: Redirecting to /login, user:", user); // Debug
       navigate("/login");
       return;
     }
     if (!courseId || isNaN(courseId)) {
-      console.log("EditCourse: Invalid courseId:", courseId); // Debug
+      // console.log("EditCourse: Invalid courseId:", courseId); // Debug
       setError("Invalid course ID.");
       setIsFetching(false);
       const timeout = setTimeout(() => navigate("/instructor-dashboard"), 3000);
@@ -41,10 +41,10 @@ function EditCourse() {
 
     const fetchCourse = async () => {
       try {
-        console.log(`EditCourse: Fetching courseId=${courseId}`); // Debug
+        // console.log(`EditCourse: Fetching courseId=${courseId}`); // Debug
         const response = await api.get(`/courses/${courseId}`);
         const course = response.data.data;
-        console.log("EditCourse: Course fetched:", course); // Debug
+        // console.log("EditCourse: Course fetched:", course); // Debug
         setValue("title", course.title);
         setValue("description", course.description || "");
         setValue("categoryId", course.categoryId.toString());
@@ -69,10 +69,10 @@ function EditCourse() {
 
     const fetchCategories = async () => {
       try {
-        console.log("EditCourse: Fetching categories"); // Debug
+        // console.log("EditCourse: Fetching categories"); // Debug
         const response = await api.get("/courses/category");
         setCategories(response.data.data);
-        console.log("EditCourse: Categories fetched:", response.data.data); // Debug
+        // console.log("EditCourse: Categories fetched:", response.data.data); // Debug
       } catch (err) {
         console.error(
           "EditCourse: Fetch Categories Error:",
@@ -91,13 +91,13 @@ function EditCourse() {
 
   const onSubmit = async (data) => {
     try {
-      console.log("EditCourse: Updating courseId:", courseId, "payload:", data); // Debug
+      // console.log("EditCourse: Updating courseId:", courseId, "payload:", data); // Debug
       await api.put(`/courses/${courseId}`, {
         title: data.title,
         description: data.description,
         categoryId: parseInt(data.categoryId),
       });
-      console.log("EditCourse: Course updated successfully"); // Debug
+      // console.log("EditCourse: Course updated successfully"); // Debug
       navigate("/instructor-dashboard");
     } catch (err) {
       console.error(

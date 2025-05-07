@@ -14,16 +14,16 @@ function InstructorDashboard() {
   useEffect(() => {
     if (loading) return;
     if (!user || user.role !== "Instructor") {
-      console.log("InstructorDashboard: Redirecting to /, user:", user); // Debug
+      // console.log("InstructorDashboard: Redirecting to /, user:", user); // Debug
       navigate("/");
       return;
     }
 
     const fetchCourses = async () => {
       try {
-        console.log("InstructorDashboard: Fetching courses for user:", user.id); // Debug
+        // console.log("InstructorDashboard: Fetching courses for user:", user.id); // Debug
         const response = await api.get("/courses/instructor");
-        console.log("InstructorDashboard: Courses response:", response.data); // Debug
+        // console.log("InstructorDashboard: Courses response:", response.data); // Debug
         setCourses(response.data.data);
       } catch (err) {
         console.error(
@@ -35,7 +35,7 @@ function InstructorDashboard() {
           `Failed to fetch courses: ${err.response?.data?.error || err.message}`
         );
         if (err.response?.status === 401) {
-          console.log("InstructorDashboard: 401 detected, triggering logout"); // Debug
+          // console.log("InstructorDashboard: 401 detected, triggering logout"); // Debug
           logout();
         }
       } finally {
@@ -48,9 +48,9 @@ function InstructorDashboard() {
   const handleDelete = async (courseId) => {
     if (window.confirm("Are you sure you want to delete this course?")) {
       try {
-        console.log("InstructorDashboard: Deleting courseId:", courseId); // Debug
+        // console.log("InstructorDashboard: Deleting courseId:", courseId); // Debug
         await api.delete(`/courses/${courseId}`);
-        console.log("InstructorDashboard: Course deleted:", courseId); // Debug
+        // console.log("InstructorDashboard: Course deleted:", courseId); // Debug
         setCourses(courses.filter((course) => course.id !== courseId));
       } catch (err) {
         console.error(

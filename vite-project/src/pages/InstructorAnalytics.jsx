@@ -14,6 +14,7 @@ import OverviewCards from "../components/OverviewCards";
 import AnalyticsChart from "../components/AnalyticsChart";
 import StudentProgressTable from "../components/StudentProgressTable";
 
+// Register Chart.js components for bar and pie charts
 ChartJS.register(
   ArcElement,
   BarElement,
@@ -24,30 +25,33 @@ ChartJS.register(
 );
 
 const InstructorAnalytics = () => {
+  // State for analytics data and UI controls
   const [enrollments, setEnrollments] = useState([]);
   const [completions, setCompletions] = useState([]);
   const [ratings, setRatings] = useState([]);
   const [students, setStudents] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
-  const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const [loading, setLoading] = useState(true);
 
+  // Fetch data when selectedCourse changes
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
+        // Build query string for course filter
         const query = new URLSearchParams();
         if (selectedCourse) query.append("courseId", selectedCourse.value);
-        if (dateRange.startDate) query.append("startDate", dateRange.startDate);
-        if (dateRange.endDate) query.append("endDate", dateRange.endDate);
         const queryString = query.toString() ? `?${query.toString()}` : "";
 
+        // Fetch analytics data in parallel
         const [enrollRes, compRes, rateRes, studentRes] = await Promise.all([
           api.get(`/analytics/enrollments${queryString}`),
           api.get(`/analytics/completions${queryString}`),
           api.get(`/analytics/ratings${queryString}`),
           api.get(`/analytics/students${queryString}`),
         ]);
+
+        // Update state with API responses
         setEnrollments(enrollRes.data.data);
         setCompletions(compRes.data.data);
         setRatings(rateRes.data.data);
@@ -59,13 +63,15 @@ const InstructorAnalytics = () => {
       }
     };
     fetchData();
-  }, [selectedCourse, dateRange]);
+  }, [selectedCourse]);
 
+  // Map enrollments to course filter options
   const courseOptions = enrollments.map((e) => ({
     value: e.courseId,
     label: e.courseTitle,
   }));
 
+  // Data for enrollment bar chart
   const enrollmentData = {
     labels: enrollments.map((e) => e.courseTitle),
     datasets: [
@@ -85,10 +91,13 @@ const InstructorAnalytics = () => {
     ],
   };
 
+  // Select completion data for pie chart
   const selectedCompletion =
     completions.find(
       (c) => !selectedCourse || c.courseId === selectedCourse?.value
     ) || completions[0];
+
+  // Data for completion pie chart
   const completionData = selectedCompletion
     ? {
         labels: ["Completed", "Not Completed"],
@@ -118,6 +127,7 @@ const InstructorAnalytics = () => {
       }
     : null;
 
+  // Data for ratings bar chart
   const ratingData = {
     labels: ratings.map((r) => r.courseTitle),
     datasets: [
@@ -137,6 +147,7 @@ const InstructorAnalytics = () => {
     ],
   };
 
+  // Chart configuration options
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -152,23 +163,26 @@ const InstructorAnalytics = () => {
         padding: 8,
       },
     },
+    scales: {
+      y: { beginAtZero: true },
+    },
   };
 
+  // Render loading state
   if (loading)
     return (
-      <div className="text-center py-10 text-blue-600 text-lg sm:text-xl">
+      <div className="text-center py-10 text-blue-600 text-lg sm:text-xl animate-pulse">
         Loading...
       </div>
     );
 
+  // Render main dashboard
   return (
     <div className="container mx-auto p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
       <AnalyticsHeader
         courseOptions={courseOptions}
         selectedCourse={selectedCourse}
         setSelectedCourse={setSelectedCourse}
-        dateRange={dateRange}
-        setDateRange={setDateRange}
       />
       <OverviewCards
         enrollments={enrollments}

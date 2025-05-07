@@ -19,25 +19,25 @@ function ManageSessions() {
 
   useEffect(() => {
     if (loading) {
-      console.log("ManageSessions: Waiting for auth to load"); // Debug
+      // console.log("ManageSessions: Waiting for auth to load"); // Debug
       return;
     }
     if (!user || user.role !== "Instructor") {
-      console.log("ManageSessions: Redirecting to /login, user:", user); // Debug
+      // console.log("ManageSessions: Redirecting to /login, user:", user); // Debug
       navigate("/login"); // Redirect to login
       return;
     }
 
     const fetchSessions = async () => {
       try {
-        console.log(
-          "ManageSessions: Fetching sessions for courseId:",
-          courseId,
-          "user:",
-          user.id
-        ); // Debug
+        // console.log(
+        //   "ManageSessions: Fetching sessions for courseId:",
+        //   courseId,
+        //   "user:",
+        //   user.id
+        // ); // Debug
         const response = await api.get(`/sessions/${courseId}`);
-        console.log("ManageSessions: Sessions response:", response.data); // Debug
+        // console.log("ManageSessions: Sessions response:", response.data); // Debug
         setSessions(response.data.data || []);
       } catch (err) {
         console.error(
@@ -51,7 +51,7 @@ function ManageSessions() {
           }`
         );
         if (err.response?.status === 401) {
-          console.log("ManageSessions: 401 detected, redirecting to /login"); // Debug
+          // console.log("ManageSessions: 401 detected, redirecting to /login"); // Debug
           navigate("/login");
         }
       }
